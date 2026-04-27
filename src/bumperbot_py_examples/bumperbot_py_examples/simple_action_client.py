@@ -12,7 +12,8 @@ class SimpleActionClient(Node):
         self.get_logger().info('Simple Action Client has been started.')
 
         self.action_client.wait_for_server()
-
+        self.get_logger().info('Fibonacci Action server available! Waiting for goal...')
+        self.goal = Fibonacci.Goal()
         self.goal.order = 11
 
         self.future = self.action_client.send_goal_async(self.goal, feedback_callback=self.feedbackCallback)
@@ -39,8 +40,8 @@ def main():
         rclpy.init()
         action_client = SimpleActionClient()
         rclpy.spin(action_client)
-        action_client.destroy_node()
-        rclpy.shutdown()
+        
+        
 
 if __name__ == '__main__':
     main()
