@@ -22,6 +22,8 @@ def generate_launch_description():
     map_name = LaunchConfiguration("map_name")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
+    lifecycle_nodes = ['map_server']
+
     map_path = PathJoinSubstitution([
         get_package_share_directory("bumperbot_mapping"),
         "maps",
@@ -40,7 +42,7 @@ def generate_launch_description():
         ]
     )
 
-    lifecycle_manager = Node(
+    nav2_lifecycle_manager = Node(
         package="nav2_lifecycle_manager",
         executable="lifecycle_manager",
         name="lifecycle_manager_localization",
@@ -48,15 +50,13 @@ def generate_launch_description():
         parameters=[
             {"use_sim_time": use_sim_time},
             {"autostart": True}, # This forces the transition to the 'Active' state
-            {"node_names": ["map_server"]} # This must match the name of your map_server node
+            {"node_names":lifecycle_nodes} 
         ]
     )
-
-
 
     return LaunchDescription([
         map_name_arg,
         use_sim_time_arg, 
         nav2_map_server,
-        lifecycle_manager
+        nav2_lifecycle_manager
     ])
