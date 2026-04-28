@@ -21,7 +21,7 @@ class TwistRelay(Node):
             self.joyTwistCallback, 10)
         
         self.joy_publisher = self.create_publisher(Twist, 
-                                                  '/input_joy/cmd_vel', 
+                                                  'joy_vel', 
                                                   10)
         
 
