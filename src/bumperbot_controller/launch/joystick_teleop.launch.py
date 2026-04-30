@@ -21,12 +21,16 @@ def generate_launch_description():
         executable="joy_teleop",
         parameters=[os.path.join(get_package_share_directory("bumperbot_controller"), "config", "joy_teleop.yaml"),
                     {"use_sim_time": LaunchConfiguration("use_sim_time")}],
+        remappings=[
+            ('/joy', '/input_joy/joy')
+        ]
     )
 
     joy_node = Node(
         package="joy",
         executable="joy_node",
         name="joystick",
+        namespace="input_joy",
         parameters=[os.path.join(get_package_share_directory("bumperbot_controller"), "config", "joy_config.yaml"),
                     {"use_sim_time": LaunchConfiguration("use_sim_time")}]
     )
