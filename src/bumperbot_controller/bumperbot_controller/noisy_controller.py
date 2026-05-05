@@ -51,7 +51,7 @@ class NoisyController(Node):
         self.br_ = TransformBroadcaster(self)
         self.transform_stamped_ = TransformStamped()
         self.transform_stamped_.header.frame_id = "odom"
-        self.transform_stamped_.child_frame_id = "base_footprint_noisy"
+        self.transform_stamped_.child_frame_id = "base_footprint"
 
         self.prev_time_ = self.get_clock().now()
 
