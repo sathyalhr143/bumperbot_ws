@@ -8,6 +8,13 @@ from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformListener, LookupException, ConnectivityException, ExtrapolationException
 from tf_transformations import euler_from_quaternion
 
+# global variables for probability
+PRIOR_PROB = 0.5
+OCCUPIED_PROB = 0.9
+FREE_PROB = 0.35
+
+
+
 class Pose:
     def __init__(self, px = 0, py = 0):
         self.x = px
@@ -66,11 +73,23 @@ def inverseSensorModel(robot_p: Pose, sensor_p: Pose):
     line = bresenham(robot_p, sensor_p)
     
     for pose in line[:-1]:
-        occ_values.append((pose, 0))
-    occ_values.append((line[-1], 100))
+        occ_values.append((pose, FREE_PROB))
+    occ_values.append((line[-1], OCCUPIED_PROB))
     return occ_values
 
+def prob2LogOdds(p):
+    return math.log(p / (1 - p))
+    
 
+def logOdds2Prob(l):
+    try:
+        return 1 - (1 / (1 + math.exp(l)))
+    except OverflowError:
+        return 1.0 if l > 0 else 0.0
+
+prior_log_odds = prob2LogOdds(PRIOR_PROB)
+occupied_log_odds = prob2LogOdds(OCCUPIED_PROB)
+free_log_odds = prob2LogOdds(FREE_PROB)
 
 class MappingWithKnownPoses(Node):
     def __init__(self, name):
@@ -94,6 +113,8 @@ class MappingWithKnownPoses(Node):
         self.map_.info.origin.position.y = float(-round(height / 2.0))
         self.map_.header.frame_id = 'odom'
         self.map_.data = [-1] * (self.map_.info.width * self.map_.info.height)
+
+        self.probalility_map_ = [prior_log_odds] * (self.map_.info.width * self.map_.info.height)
 
         self.map_pub = self.create_publisher(OccupancyGrid, 'map', 1)
         self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scanCallback, 10)
@@ -140,7 +161,8 @@ class MappingWithKnownPoses(Node):
             poses = inverseSensorModel(robot_p, beam_p)
             for pose, value in poses:
                 cell = poseToCell(pose, self.map_.info)
-                self.map_.data[cell] = value
+                self.probalility_map_[cell] += prob2LogOdds(value) - prior_log_odds
+               
                 
 
                 # if value == 100:
@@ -150,6 +172,7 @@ class MappingWithKnownPoses(Node):
 
     def timerCallback(self):
         self.map_.header.stamp = self.get_clock().now().to_msg()
+        self.map_.data = [int(logOdds2Prob(cell) * 100) for cell in self.probalility_map_]
         self.map_pub.publish(self.map_)
 
 def main():
