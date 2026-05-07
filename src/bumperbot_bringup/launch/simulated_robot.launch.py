@@ -35,9 +35,21 @@ def generate_launch_description():
             "use_sim_time": "True"
         }.items()
     )
+
+    # mapper = IncludeLaunchDescription(
+    #     os.path.join(
+    #         get_package_share_directory("bumperbot_mapping"),
+    #         "launch",
+    #         "mapping_with_known_poses.launch.py"
+    #     ),
+    #     launch_arguments={
+    #         "use_sim_time": "True"  
+    #     }.items()
+    # )
     
     return LaunchDescription([
         gazebo,
         controller,
         joystick,
+        # mapper,
     ])

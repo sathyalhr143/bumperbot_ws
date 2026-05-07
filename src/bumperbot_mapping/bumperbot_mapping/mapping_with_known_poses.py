@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import rclpy
+from rclpy.time import Time
 import math
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid, MapMetaData
 from sensor_msgs.msg import LaserScan
-from tf2_ros import Buffer, TransformListener, LookupException
+from tf2_ros import Buffer, TransformListener, LookupException, ConnectivityException, ExtrapolationException
 from tf_transformations import euler_from_quaternion
 
 class Pose:
@@ -24,6 +25,53 @@ def poseOnMap(pose: Pose, map_info: MapMetaData):
 def poseToCell(pose: Pose, map_info: MapMetaData):
     return map_info.width * pose.y + pose.x
 
+
+def bresenham(start: Pose, end: Pose):
+    line = []
+    dx = end.x - start.x
+    dy = end.y - start.y
+    xsign = 1 if dx > 0 else -1
+    ysign = 1 if dy > 0 else -1
+    dx = abs(dx)
+    dy = abs(dy)
+
+    if dx > dy:
+        xx = xsign
+        xy = 0
+        yx = 0
+        yy = ysign
+    else:
+        tmp = dx
+        dx = dy
+        dy = tmp
+        xx = 0
+        xy = ysign
+        yx = xsign
+        yy = 0
+
+    D = 2 * dy - dx
+    y = 0
+
+    for i in range(dx + 1):
+        line.append(Pose(start.x + i * xx + y * yx, start.y + i * xy + y * yy))
+        if D >= 0:
+            y += 1
+            D -= 2 * dx
+        D += 2 * dy
+
+    return line
+
+def inverseSensorModel(robot_p: Pose, sensor_p: Pose):
+    occ_values = []
+    line = bresenham(robot_p, sensor_p)
+    
+    for pose in line[:-1]:
+        occ_values.append((pose, 0))
+    occ_values.append((line[-1], 100))
+    return occ_values
+
+
+
 class MappingWithKnownPoses(Node):
     def __init__(self, name):
         super().__init__(name)
@@ -31,6 +79,7 @@ class MappingWithKnownPoses(Node):
         self.declare_parameter('width', 50.0)
         self.declare_parameter('height', 50.0)
         self.declare_parameter('resolution', 0.1)
+        # self.declare_parameter('use_sim_time', True)
 
         width = self.get_parameter('width').value
         height = self.get_parameter('height').value
@@ -55,9 +104,15 @@ class MappingWithKnownPoses(Node):
 
     def scanCallback(self, scan: LaserScan):
         try:
-            t = self.tf_buffer.lookup_transform(self.map_.header.frame_id, scan.header.frame_id, rclpy.time.Time())
-        except LookupException:
-            self.get_logger().error('Unable to transform between /odom and /base_footprint')
+            t = self.tf_buffer.lookup_transform(
+                self.map_.header.frame_id, 
+                scan.header.frame_id, 
+                Time.from_msg(scan.header.stamp),
+                timeout=rclpy.duration.Duration(seconds=0.1)
+            )
+
+        except (LookupException, ConnectivityException, ExtrapolationException) as e:
+            self.get_logger().error(f'Unable to transform between /odom and /base_footprint: {str(e)}')
             return
 
         robot_p = coordinatesToPose(t.transform.translation.x, t.transform.translation.y, self.map_.info)
@@ -70,18 +125,28 @@ class MappingWithKnownPoses(Node):
                 t.transform.rotation.z, t.transform.rotation.w])
 
         for i in range(len(scan.ranges)):
-            if math.isinf(scan.ranges[i]):
+            r = scan.ranges[i]
+
+            if math.isinf(r) or math.isnan(r) or r >= (scan.range_max - 0.05):
                 continue
             
             theta = yaw + scan.angle_min + (scan.angle_increment * i)
-            px = t.transform.translation.x + scan.ranges[i] * math.cos(theta)
-            py = t.transform.translation.y + scan.ranges[i] * math.sin(theta)
+            px = t.transform.translation.x + r * math.cos(theta)
+            py = t.transform.translation.y + r * math.sin(theta)
             beam_p= coordinatesToPose(px, py, self.map_.info)
             if not poseOnMap(beam_p, self.map_.info):
                 continue
-            cell = poseToCell(beam_p, self.map_.info)
-            self.map_.data[cell] = 100
-            
+
+            poses = inverseSensorModel(robot_p, beam_p)
+            for pose, value in poses:
+                cell = poseToCell(pose, self.map_.info)
+                self.map_.data[cell] = value
+                
+
+                # if value == 100:
+                #     self.map_.data[cell] = 100
+                # elif value == 0 and self.map_.data[cell] != 100:
+                #     self.map_.data[cell] = 0
 
     def timerCallback(self):
         self.map_.header.stamp = self.get_clock().now().to_msg()
