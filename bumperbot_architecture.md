@@ -30,15 +30,21 @@ graph TD
     BumperbotCtrl -->|Velocity Commands| Hardware[ros2_control <br/> hardware_interface]
     Hardware -->|/joint_states| JointStateBroadcaster[joint_state_broadcaster]
     Hardware -->|/joint_states| RSP[robot_state_publisher]
+    Hardware -->|/joint_states| NoisyCtrl[noisy_controller]
     
     %% Sensors & Localization
     MPU[mpu6050_driver] -->|/imu/out| IMURepub[imu_republisher]
+    MPU -->|/imu/out| KF[kalman_filter]
     IMURepub -->|/imu_ekf| EKF[ekf_filter_node]
     BumperbotCtrl -->|/bumperbot_controller/odom| EKF
+    BumperbotCtrl -->|/bumperbot_controller/odom| OdoMM[odometry_motion_model]
+    NoisyCtrl -->|/bumperbot_controller/odom_noisy| KF
+    KF -->|/bumperbot_controller/odom_kalman| KFOut[Kalman Filtered Odom]
+    OdoMM -->|/odometry_motion_model/samples| Particles[Particle Cloud]
     EKF -->|/odometry/filtered & tf| Nav[Navigation Stack]
     
     %% Mapping
-    Lidar -->|/scan| Mapper[mapping_with_known_poses]
+    Lidar -->|/scan| Mapper["mapping_with_known_poses <br/> (log-odds occupancy grid)"]
     EKF -->|tf| Mapper
     Mapper -->|/map| MapOutput[Map]
 ```
@@ -133,9 +139,14 @@ This subsystem processes user inputs from a joystick or keyboard, applies safety
   - `/tf`: Smoothed transform from `odom` to `base_footprint`.
 
 ### `mapping_with_known_poses` (package: bumperbot_mapping)
-- **Description**: Uses accurate known poses (from `odom` or `tf`) and laser scans to project obstacles onto an occupancy grid map.
+- **Description**: Builds a probabilistic occupancy grid map using known robot poses (from TF) and laser scans. Implements an **inverse sensor model** with **Bresenham ray-casting** and uses **log-odds notation** for numerically stable probability accumulation. Free cells are assigned `P=0.35`, occupied cells `P=0.9`, and the prior is `P=0.5`. The map is periodically converted from log-odds back to probability and published.
+- **Parameters**:
+  - `width` (float, default: 50.0): Map width in meters.
+  - `height` (float, default: 50.0): Map height in meters.
+  - `resolution` (float, default: 0.1): Grid cell size in meters/cell.
 - **Subscribed Topics**: `/scan` (`sensor_msgs/LaserScan`)
-- **Published Topics**: `/map` (`nav_msgs/OccupancyGrid`)
+- **Published Topics**: `/map` (`nav_msgs/OccupancyGrid`) — published on a 1 Hz timer.
+- **TF Lookups**: `odom` → `<scan_frame>` (e.g., `base_link_laser`)
 
 ### `nav2_map_server` (package: nav2_map_server)
 - **Description**: ROS 2 Nav2 map server for loading pre-existing map files. Managed by the `lifecycle_manager`.
@@ -143,9 +154,27 @@ This subsystem processes user inputs from a joystick or keyboard, applies safety
   - `/map_server/load_map` (`nav2_msgs/LoadMap`)
 - **Published Topics**: `/map` (`nav_msgs/OccupancyGrid`)
 
+### `odometry_motion_model` (package: bumperbot_localization)
+- **Description**: Implements a **probabilistic odometry motion model** for particle-based localization. Maintains a cloud of pose samples that are propagated using odometry increments corrupted by Gaussian noise. The noise is parameterized by four alpha values that model rotational and translational uncertainty. Uses the `angle_diff` utility for proper angular wrapping.
+- **Parameters**:
+  - `alpha1` (float, default: 0.05): Rotation noise from rotation.
+  - `alpha2` (float, default: 0.1): Rotation noise from translation.
+  - `alpha3` (float, default: 0.1): Translation noise from translation.
+  - `alpha4` (float, default: 0.1): Translation noise from rotation.
+  - `num_samples` (int, default: 300): Number of particles.
+- **Subscribed Topics**: `/bumperbot_controller/odom` (`nav_msgs/Odometry`)
+- **Published Topics**: `/odometry_motion_model/samples` (`geometry_msgs/PoseArray`)
+
+### `kalman_filter` (package: bumperbot_localization)
+- **Description**: A custom 1D **Kalman Filter** that fuses noisy wheel odometry angular velocity with IMU gyroscope measurements. Implements the standard predict-update cycle: the state prediction uses the odometry motion increment, and the measurement update fuses the IMU reading using Gaussian fusion.
+- **Subscribed Topics**:
+  - `/bumperbot_controller/odom_noisy` (`nav_msgs/Odometry`): Noisy wheel odometry.
+  - `/imu/out` (`sensor_msgs/Imu`): Raw IMU data (angular velocity z).
+- **Published Topics**: `/bumperbot_controller/odom_kalman` (`nav_msgs/Odometry`): Filtered odometry with corrected angular velocity.
+
 ---
 
 ## 5. Examples & Tests
 
 ### `simple_controller` & `noisy_controller` (package: bumperbot_controller)
-- **Description**: Custom Python/C++ implementations of a differential drive kinematic model used for educational purposes and testing. They can be toggled using launch arguments.
+- **Description**: Custom Python/C++ implementations of a differential drive kinematic model used for educational purposes and testing. The `noisy_controller` adds Gaussian noise (`σ=0.005`) to wheel encoder readings and publishes noisy odometry on `/bumperbot_controller/odom_noisy` with a TF to `base_footprint_noisy`. They can be toggled using launch arguments.
