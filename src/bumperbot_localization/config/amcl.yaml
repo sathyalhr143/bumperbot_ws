@@ -1,0 +1,56 @@
+amcl:
+  ros__parameters:
+    use_sim_time: true
+    
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    global_frame_id: "map"
+    scan_topic: scan
+    tf_broadcast: true # takes care of transform between odom and base_footprint
+    transform_tolerance: 1.0 # tolerance for transform between odom and base_footprint
+    save_pose_rate: 0.5 # Save the pose at 0.5 Hz rate
+    
+    set_initial_pose: true # Set the initial pose
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
+
+    # Odometry motion model parameters
+    odom_model_type: "nav2_amcl::DifferentialDriveMotionModel" # Diffenrential drive model
+    alpha1: 0.2 # noise model of rotation in place
+    alpha2: 0.2 # noise model of translation in place
+    alpha3: 0.2 # noise model of rotation in random direction
+    alpha4: 0.2 # noise model of translation in random direction
+
+    # Laser model parameters
+    laser_model_type: "likelihood_field"
+    beam_skip_distance: 0.5 # Skip every 0.5 beam
+    beam_skip_error_threshold: 0.9 # ignore the beam that are beyond this threshold
+    beam_skip_threshold: 0.3 # ignore the beam that are beyond this threshold
+    do_beamskip: false # do not skip the beams
+    lambda_short: 0.1 # noise model of short range
+    laser_likelihood_max_dist: 2.0 # maximum distance for laser readings
+    laser_max_range: 100.0 # maximum range of the laser
+    laser_min_range: -1.0 # minimum range of the laser
+    max_beams: 60 # maximum number of beams to use
+    pf_err: 0.05 # error tolerance for particle filter
+    pf_z: 0.99 # confidence threshold for particle filter
+    sigma_hit: 0.2 # noise model of hit
+    z_hit: 0.5 # noise model of hit
+    z_max: 0.05 # noise model of max range
+    z_rand: 0.2 # noise model of random noise
+    z_short: 0.05 # noise model of short range
+
+    # Resampling Parameters
+    resample_interval: 1 # Resample every 1 particles
+    min_particles: 2000 # Minimum number of particles
+    max_particles: 8000 # Maximum number of particles
+    recovery_alpha_slow: 0.1 # Recovery alpha for slow recovery
+    recovery_alpha_fast: 0.1 # Recovery alpha for fast recovery
+    update_min_a: 0.2 # Minimum angle change for update
+    update_min_d: 0.2 # Minimum distance change for update
+      
+    
+    
