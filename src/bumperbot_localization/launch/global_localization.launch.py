@@ -56,7 +56,7 @@ def generate_launch_description():
         output="screen",
         parameters=[amcl_config,
             {"use_sim_time": use_sim_time}],
-    
+
     )
 
     nav2_lifecycle_manager = Node(
