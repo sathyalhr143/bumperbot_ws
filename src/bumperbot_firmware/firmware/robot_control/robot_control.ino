@@ -27,7 +27,7 @@ bool is_right_wheel_cmd = false;
 bool is_left_wheel_cmd = false;
 bool is_right_wheel_forward = true;
 bool is_left_wheel_forward = true;
-char value[] = "00.00";
+char value[10] = "";
 uint8_t value_idx = 0;
 bool is_cmd_complete = false;
 
@@ -81,63 +81,64 @@ void setup() {
 
 void loop() {
   // Read and Interpret Wheel Velocity Commands
-  if (Serial.available())
-  {
+  if (Serial.available()){
     char chr = Serial.read();
     // Right Wheel Motor
-    if(chr == 'r')
-    {
+    if(chr == 'r'){
       is_right_wheel_cmd = true;
       is_left_wheel_cmd = false;
       value_idx = 0;
-      is_cmd_complete = false;
+      // is_cmd_complete = false;
     }
     // Left Wheel Mo tor
-    else if(chr == 'l')
-    {
+    else if(chr == 'l'){
       is_right_wheel_cmd = false;
       is_left_wheel_cmd = true;
       value_idx = 0;
     }
     // Positive direction
-    else if(chr == 'p')
-    {
-      if(is_right_wheel_cmd && !is_right_wheel_forward)
+    else if(chr == 'p'){
+      if(is_right_wheel_cmd) 
+      // && !is_right_wheel_forward)
       {
         // change the direction of the rotation
-        digitalWrite(L298N_in1, HIGH - digitalRead(L298N_in1));
-        digitalWrite(L298N_in2, HIGH - digitalRead(L298N_in2));
+        // digitalWrite(L298N_in1, HIGH - digitalRead(L298N_in1));
+        // digitalWrite(L298N_in2, HIGH - digitalRead(L298N_in2));
         is_right_wheel_forward = true;
       }
-      else if(is_left_wheel_cmd && !is_left_wheel_forward)
+      else if(is_left_wheel_cmd)
+      // && !is_left_wheel_forward)
       {
         // change the direction of the rotation
-        digitalWrite(L298N_in3, HIGH - digitalRead(L298N_in3));
-        digitalWrite(L298N_in4, HIGH - digitalRead(L298N_in4));
+        // digitalWrite(L298N_in3, HIGH - digitalRead(L298N_in3));
+        // digitalWrite(L298N_in4, HIGH - digitalRead(L298N_in4));
         is_left_wheel_forward = true;
       }
     }
     // Negative direction
     else if(chr == 'n')
     {
-      if(is_right_wheel_cmd && is_right_wheel_forward)
+      if(is_right_wheel_cmd)
+      // && is_right_wheel_forward)
       {
         // change the direction of the rotation
-        digitalWrite(L298N_in1, HIGH - digitalRead(L298N_in1));
-        digitalWrite(L298N_in2, HIGH - digitalRead(L298N_in2));
+        // digitalWrite(L298N_in1, HIGH - digitalRead(L298N_in1));
+        // digitalWrite(L298N_in2, HIGH - digitalRead(L298N_in2));
         is_right_wheel_forward = false;
       }
-      else if(is_left_wheel_cmd && is_left_wheel_forward)
+      else if(is_left_wheel_cmd)
+      //  && is_left_wheel_forward)
       {
         // change the direction of the rotation
-        digitalWrite(L298N_in3, HIGH - digitalRead(L298N_in3));
-        digitalWrite(L298N_in4, HIGH - digitalRead(L298N_in4));
+        // digitalWrite(L298N_in3, HIGH - digitalRead(L298N_in3));
+        // digitalWrite(L298N_in4, HIGH - digitalRead(L298N_in4));
         is_left_wheel_forward = false;
       }
     }
     // Separator
-    else if(chr == ',')
-    {
+    else if(chr == ','){
+      value[value_idx] = '\0';
+
       if(is_right_wheel_cmd)
       {
         right_wheel_cmd_vel = atof(value);
@@ -159,7 +160,7 @@ void loop() {
     // Command Value
     else
     {
-      if(value_idx < 5)
+      if(value_idx < 9)
       {
         value[value_idx] = chr;
         value_idx++;
@@ -178,13 +179,45 @@ void loop() {
     leftMotor.Compute();
 
     // Ignore commands smaller than inertia
-    if(right_wheel_cmd_vel == 0.0)
-    {
+    // if(right_wheel_cmd_vel == 0.0)
+    // {
+    //   right_wheel_cmd = 0.0;
+    // }
+    // if(left_wheel_cmd_vel == 0.0)
+    // {
+    //   left_wheel_cmd = 0.0;
+    // }
+
+    // Right Motor explicit state control
+    if (right_wheel_cmd_vel == 0.0) {
       right_wheel_cmd = 0.0;
+      // Optional: Hard brake by setting both to LOW
+      digitalWrite(L298N_in1, LOW);
+      digitalWrite(L298N_in2, LOW);
+    } else {
+      if (is_right_wheel_forward) {
+        digitalWrite(L298N_in1, HIGH);
+        digitalWrite(L298N_in2, LOW);
+      } else {
+        digitalWrite(L298N_in1, LOW);
+        digitalWrite(L298N_in2, HIGH);
+      }
     }
-    if(left_wheel_cmd_vel == 0.0)
-    {
+
+    // Left Motor explicit state control
+    if (left_wheel_cmd_vel == 0.0) {
       left_wheel_cmd = 0.0;
+      // Optional: Hard brake by setting both to LOW
+      digitalWrite(L298N_in3, LOW);
+      digitalWrite(L298N_in4, LOW);
+    } else {
+      if (is_left_wheel_forward) {
+        digitalWrite(L298N_in3, HIGH);
+        digitalWrite(L298N_in4, LOW);
+      } else {
+        digitalWrite(L298N_in3, LOW);
+        digitalWrite(L298N_in4, HIGH);
+      }
     }
 
     String encoder_read = "r" + right_wheel_sign + String(right_wheel_meas_vel) + ",l" + left_wheel_sign + String(left_wheel_meas_vel) + ",";
