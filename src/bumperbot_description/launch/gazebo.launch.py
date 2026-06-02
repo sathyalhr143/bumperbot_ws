@@ -1,3 +1,4 @@
+#!usr/bin/env python3
 import os
 from os import pathsep
 from pathlib import Path

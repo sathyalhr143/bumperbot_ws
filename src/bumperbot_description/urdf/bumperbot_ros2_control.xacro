@@ -25,6 +25,7 @@
             <hardware>
                 <plugin>bumperbot_firmware/BumperbotInterface</plugin>
                 <param name="port">/dev/arduino_nano</param>
+                <param name="baud_rate">115200</param>
             </hardware>
         </xacro:unless>
         
