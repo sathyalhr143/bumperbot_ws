@@ -28,12 +28,11 @@
 | ![Robot Side View](docs/images/bumperbot_side.jpeg) |
 | *Side View* |
 
-> **⬆️ TODO:** Replace the placeholder paths above with actual photos of your Bumperbot. Add your images to a `docs/images/` directory.
 
 ---
 
 ## 🎬 Demo Video
-<video width="2160" height="3840" alt="7A13EDF0-692F-4E86-B306-2B0643A5267B_1_206_a" src="https://github.com/user-attachments/assets/aef9bed7-548a-4e78-82c1-d889f800ac4a" />
+<video  src="https://github.com/user-attachments/assets/aef9bed7-548a-4e78-82c1-d889f800ac4a" controls width="100%"></video>
 
 
 <!-- ============================================================
