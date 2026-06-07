@@ -32,7 +32,9 @@
 ---
 
 ## 🎬 Demo Video
-<video  src="https://github.com/user-attachments/assets/aef9bed7-548a-4e78-82c1-d889f800ac4a" controls width="100%"></video>
+
+https://github.com/user-attachments/assets/fe319655-5134-472a-ae1c-263cb5d58a99
+
 
 
 <!-- ============================================================
