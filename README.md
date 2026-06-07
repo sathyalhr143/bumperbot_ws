@@ -25,7 +25,7 @@
 
 | | |
 |:---:|:---:|
-| ![Robot Front View](docs/images/bumperbot_front.jpg) | ![Robot Side View](docs/images/bumperbot_side.jpg) |
+| ![Robot Front View](docs/images/bumperbot_front.jpg) | ![Robot Side View](docs/images/bumperbot_side.jpeg) |
 | *Front View* | *Side View* |
 
 > **⬆️ TODO:** Replace the placeholder paths above with actual photos of your Bumperbot. Add your images to a `docs/images/` directory.
