@@ -25,14 +25,16 @@
 
 | | |
 |:---:|:---:|
-| ![Robot Front View](docs/images/bumperbot_front.jpg) | ![Robot Side View](docs/images/bumperbot_side.jpeg) |
-| *Front View* | *Side View* |
+| ![Robot Side View](docs/images/bumperbot_side.jpeg) |
+| *Side View* |
 
 > **⬆️ TODO:** Replace the placeholder paths above with actual photos of your Bumperbot. Add your images to a `docs/images/` directory.
 
 ---
 
 ## 🎬 Demo Video
+<video width="2160" height="3840" alt="7A13EDF0-692F-4E86-B306-2B0643A5267B_1_206_a" src="https://github.com/user-attachments/assets/aef9bed7-548a-4e78-82c1-d889f800ac4a" />
+
 
 <!-- ============================================================
      PLACEHOLDER: Replace the link below with a YouTube/GIF of
@@ -44,10 +46,6 @@
      Option B — YouTube link:
        [![Bumperbot Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg)](https://youtu.be/YOUR_VIDEO_ID)
      ============================================================ -->
-
-[![Watch the Demo](https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/YOUR_VIDEO_ID)
-
-> **⬆️ TODO:** Replace `YOUR_VIDEO_ID` with your actual YouTube video ID, or embed a GIF directly.
 
 ---
 
