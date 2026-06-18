@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">🤖 Bumperbot — ROS 2 Differential Drive Robot</h1>
   <p align="center">
-    A fully autonomous differential-drive mobile robot built with <strong>ROS 2</strong>, featuring real-time teleoperation, EKF-based sensor fusion, SLAM, occupancy grid mapping, and safety-aware obstacle avoidance.
+    A differential-drive mobile robot built with <strong>ROS 2</strong>, featuring real-time teleoperation, EKF-based sensor fusion, SLAM, occupancy grid mapping, and safety-aware obstacle avoidance.
   </p>
 </p>
 
